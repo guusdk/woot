@@ -3,18 +3,28 @@
   var bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Woot.IO = (function() {
-    function IO(io) {
+    function IO(pubsub, roomName, $build ) {
+      this.subscribed = false;
       this.emit = bind(this.emit, this);
       this.on = bind(this.on, this);
-      this.io = io;
+      this.pubsub = pubsub;
+      this.roomName = roomName;
+      this.$build = $build;
+      this.pubsub.createNode( roomName, null, function(data) { console.log( "Node creation response", data) } );
+      this.pubsub.subscribe( roomName, undefined, function(data) { console.log("event", data); }, function() { console.log("subscribed"); }, function() { console.log("subscription failed");} );
     }
 
-    IO.prototype.on = function(msg, data) {
-      return this.io.on(msg, data);
+    IO.prototype.on = function( callback ) {
+      console.log( "on", callback);
     };
 
     IO.prototype.emit = function(msg, data) {
-      return this.io.emit(msg, data);
+      var node = {
+        attrs: {},
+        data: this.$build(msg).t(JSON.stringify(data)).tree()
+      }
+      //this.pubsub.publish( this.roomName, [], function(f) { console.log( "emit result", f); }   );
+      return this.pubsub.publish( this.roomName, [ node ] );
     };
 
     return IO;

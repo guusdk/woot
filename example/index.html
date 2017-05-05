@@ -4,22 +4,50 @@
   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
   <!-- Include the Quill library -->
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="//cdn.quilljs.com/0.17.6/quill.snow.css">
-  <script src="//cdn.quilljs.com/0.17.6/quill.js"></script>
-  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+  <link rel="stylesheet" href="http://cdn.quilljs.com/0.17.6/quill.snow.css">
+  <script src="http://cdn.quilljs.com/0.17.6/quill.js"></script>
+  <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
   <script type="text/javascript" src="js/woot.js"></script>
+  <script type="text/javascript" src="js/strophe.js"></script>
+  <script type="text/javascript" src="js/strophe.pubsub.js"></script>
   <script type="text/javascript" src="js/woot_io.js"></script>
   <script type="text/javascript" src="js/woot_quill.js"></script>
-  <script type="text/javascript" src="http://localhost:843/socket.io/socket.io.js"></script>
+<!--   <script type="text/javascript" src="http://localhost:843/socket.io/socket.io.js"></script> -->
   <script type="text/javascript">
-    $(document).ready(function(){
-      var socket = io.connect( "http://localhost:843/", { "force new connection": true } );
-      var room = 12;
-      socket.on('connect', function(){
-        socket.emit('room', room);
-        var io = new Woot.IO(socket);
+    var connection;
+    var room = "testdocument";
+    function log( data )
+    {
+      console.log( data );
+    }
+
+    function onConnect( status )
+    {
+      console.log( "Strophe connection status change", status );
+      if ( status == Strophe.Status.CONNECTED )
+      {
+        console.log( "Setting up Woot.IO for room", room );
+        var io = new Woot.IO( connection.pubsub, room, $build );
         window.q = new Woot.QuillAdapter(io, '#editor', '#toolbar', '#authors');
-      });
+      }
+    }
+
+    $(document).ready(function(){
+      connection = new Strophe.Connection( 'http://localhost:7070/http-bind/' );
+      connection.rawInput = function( data ) { console.log( ">", data ) };
+      connection.rawOutput = function( data ) { console.log( "<", data ) };
+      connection.connect(
+                    'admin@guus-laptop',
+                    'admin',
+                    onConnect );
+
+      // var socket = io.connect( "http://localhost:843/", { "force new connection": true } );
+      // var room = 12;
+      // socket.on('connect', function(){
+      //   socket.emit('room', room);
+      //   var io = new Woot.IO(socket);
+      //   window.q = new Woot.QuillAdapter(io, '#editor', '#toolbar', '#authors');
+      // });
       $('#show').on('click', function(){
         console.log(window.q.site.value());
         console.log(window.q.editor.getHTML());
